@@ -1,0 +1,783 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -1936,
+        160
+      ],
+      "id": "8dd54424-396f-4133-acc6-6028dc59b7c0",
+      "name": "Telegram Trigger",
+      "webhookId": "a45ac100-04c4-474d-86e1-08a480de2790",
+      "credentials": {
+        "telegramApi": {
+          "id": "cqggCDaDIpeJqXGd",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-latest"
+        },
+        "text": "Ты — AI-ассистент логиста. Внимательно проанализируй изображение ТТН (товаро-транспортной накладной) на украинском языке. Верни строго JSON-объект с заполненными полями из накладной.\n\n**ОБЩИЕ ПРАВИЛА РАСПОЗНАВАНИЯ:**\n1. **Контекстный год:** Текущий рабочий год — 2026. Если год на ТТН написан размыто, от руки или неоднозначно, но похож на текущий период, отдавай приоритет 2026 году (например, 2026 вместо 2024).\n2. **Стандартизация для дубликатов:**\n   * Все гос. номера тягачей и прицепов пиши заглавными буквами, строго с одним пробелом между маркой и номером (например: `IVECO KA1903IO`, `AA2603XG`).\n   * Даты строго в формате `ДД.ММ.ГГГГ` (например: `05.04.2026`).\n\n**ИЗВЛЕЧЕНИЕ ДАННЫХ И ПОЛЯ JSON:**\nВерни данные ТОЛЬКО в формате JSON со следующими ключами:\n\n* **loading_date:** дата выписки ТТН в формате ДД.ММ.ГГГГ (например: `05.04.2026`).\n* **unloading_date:** дата выгрузки (вписана от руки/ручкой) в формате ДД.ММ.ГГГГ. Если даты нет — верни `\"\"`.\n* **truck:** марка и номер тягача в формате МАРКА НОМЕР (например: `IVECO KA1903IO`).\n* **trailer:** номер прицепа (например: `AA2603XG`).\n\n* **driver:** Будь ОСОБЕННО внимателен к рукописному тексту в поле водителя. Извлеки фамилию и имя водителя на украинском языке. Анализируй начертание каждой буквы, чтобы не перепутать похожие символы (например, 'я' и 'и', 'л' и 'м'). Если буква написана нечетко, выбирай наиболее вероятный вариант фамилии для украинского языка (например: `Горфіняк Віктор`, `Громяк Сергей`).\n\n* **route:** СТРОГО сгенерируй фразу по шаблону:\n  `Послуги з перевезення ПММ автомобіль [марка и номер тягача] (причіп [номер прицепа]) [пункт загрузки] - [пункт выгрузки]`\n  *(Пример: Послуги з перевезення ПММ автомобіль IVECO KA1903IO (причіп AA2603XG) м. Житомир - м. Київ)*\n\n  **ПРАВИЛА ДЛЯ МАРШРУТА В ПОЛЕ route:**\n  * **Извлечение:** ОБЯЗАТЕЛЬНО находи пункты загрузки и разгрузки из полей «Пункт навантаження» и «Пункт розвантаження» (или из табличной части). Поле маршрута НЕ должно оставаться пустым.\n  * **Упрощение адресов:** Сокращай пункты загрузки и выгрузки СТРОГО до названия города/населенного пункта (например: `м. Київ`, `м. Одеса`, `с. Макарів`). Улицы, номера домов и названия баз НЕ записывай.\n\n* **customer:** краткое название заказчика (например: `ПЕТРОЛ ПАРТНЕР`).\n\nВерни чистый JSON без разметки markdown (без ```json и без кавычек на границах).",
+        "inputType": "binary",
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -1344,
+        144
+      ],
+      "id": "3b69655a-176b-45af-908b-718543550f8a",
+      "name": "Analyze an image",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "D8BCrEAwnW7Tw40Y",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1PpDbUAf8WKyWqCqGnhtvJKQ6TB6nm6XcDFRH5DrAnnY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Аркуш1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PpDbUAf8WKyWqCqGnhtvJKQ6TB6nm6XcDFRH5DrAnnY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Тягач": "={{ $('Code in JavaScript1').item.json.truck }}",
+            "Причіп": "={{ $('Code in JavaScript1').item.json.trailer }}",
+            "Водій": "={{ $('Code in JavaScript1').item.json.driver }}",
+            "Посилання на ТТН": "={{ $('Code in JavaScript1').item.json.webViewLink }}",
+            "Дата завантаження": "={{ $('Code in JavaScript1').item.json.loading_date }}",
+            "Дата розвантаження": "={{ $('Code in JavaScript1').item.json.unloading_date }}",
+            "Маршрут": "={{ $('Code in JavaScript1').item.json.route }}",
+            "Замовник": "={{ $('Code in JavaScript1').item.json.customer }}",
+            "опис": "="
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Дата завантаження",
+              "displayName": "Дата завантаження",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Дата розвантаження",
+              "displayName": "Дата розвантаження",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Тягач",
+              "displayName": "Тягач",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Причіп",
+              "displayName": "Причіп",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Водій",
+              "displayName": "Водій",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Маршрут",
+              "displayName": "Маршрут",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Замовник",
+              "displayName": "Замовник",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "опис",
+              "displayName": "опис",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Column 8",
+              "displayName": "Column 8",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "відстань",
+              "displayName": "відстань",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "тариф",
+              "displayName": "тариф",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "вартість",
+              "displayName": "вартість",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Column 12",
+              "displayName": "Column 12",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Column 13",
+              "displayName": "Column 13",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "пробіг",
+              "displayName": "пробіг",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "паливо на почтаок",
+              "displayName": "паливо на почтаок",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "заправлено",
+              "displayName": "заправлено",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "паливо на кінець",
+              "displayName": "паливо на кінець",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "використано палива",
+              "displayName": "використано палива",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "сер. розхід л/100км",
+              "displayName": "сер. розхід л/100км",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ЗП",
+              "displayName": "ЗП",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Посилання на ТТН",
+              "displayName": "Посилання на ТТН",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Column 23",
+              "displayName": "Column 23",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        0,
+        160
+      ],
+      "id": "e4241666-ebd5-4018-9a95-2f0786b1a922",
+      "name": "Append row in sheet",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gJV7H4UCrEDhNj2k",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "=ТТН_{{ $today.format('yyyy-MM-dd_HH-mm') }}.jpg",
+        "driveId": {
+          "__rl": true,
+          "value": "1FCpF3UVY1-cSWwH6OF-3ETp5oYn4RLmL",
+          "mode": "id"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1FCpF3UVY1-cSWwH6OF-3ETp5oYn4RLmL",
+          "mode": "id"
+        },
+        "options": {
+          "simplifyOutput": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -848,
+        176
+      ],
+      "id": "32f557d7-e32b-44bd-a540-cedc0c8ce789",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "fGGqdhepLGbKoNEY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1PpDbUAf8WKyWqCqGnhtvJKQ6TB6nm6XcDFRH5DrAnnY",
+          "mode": "list",
+          "cachedResultName": "Копия логістика  2026 full enabless",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PpDbUAf8WKyWqCqGnhtvJKQ6TB6nm6XcDFRH5DrAnnY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Аркуш1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PpDbUAf8WKyWqCqGnhtvJKQ6TB6nm6XcDFRH5DrAnnY/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Дата завантаження",
+              "lookupValue": "={{ $json.loading_date }}"
+            },
+            {
+              "lookupColumn": "Дата розвантаження",
+              "lookupValue": "={{ $json.unloading_date }}"
+            },
+            {
+              "lookupColumn": "Водій",
+              "lookupValue": "={{ $json.driver }}"
+            },
+            {
+              "lookupColumn": "Тягач",
+              "lookupValue": "={{ $json.truck }}"
+            },
+            {
+              "lookupColumn": "Маршрут",
+              "lookupValue": "={{ $json.route }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -384,
+        160
+      ],
+      "id": "12fe322d-4eec-43bd-bff8-765af08593a6",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gJV7H4UCrEDhNj2k",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a9caa369-45d8-453e-b97d-95580bb18f13",
+              "leftValue": "={{ $json.row_number }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "2cccc49d-678d-41f6-b23a-bc9cf0ca06a4",
+              "leftValue": "={{ $json['Дата завантаження'] }}",
+              "rightValue": "={{ $('Code in JavaScript1').item.json.loading_date.trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "309c56dc-db09-4d67-a38d-9eef34902803",
+              "leftValue": "={{ $json['Тягач'] }}",
+              "rightValue": "={{ $('Code in JavaScript1').item.json.truck.trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -208,
+        384
+      ],
+      "id": "534e9a04-c9ac-4f0a-ade1-6714ff20573d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=⚠️ Ця ТТН вже була внесена до системи раніше!",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "cfd2215a-ddcb-4717-924a-9d0c2cf8b7f6",
+      "name": "Send a text message",
+      "webhookId": "83d48ff9-52a6-43c2-b6ed-98069870a176",
+      "executeOnce": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "cqggCDaDIpeJqXGd",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=✅ ТТН успішно прийнята!",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        160
+      ],
+      "id": "58a97f30-e55e-4668-8e7e-053ba11e4b5d",
+      "name": "Send a text message1",
+      "webhookId": "06648538-70b9-4f33-8535-7d66ad9ad82b",
+      "executeOnce": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "cqggCDaDIpeJqXGd",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\n\n// Находим текст ответа Gemini\nlet rawText = inputData.text || \n              inputData.output || \n              inputData.content || \n              (inputData.candidates && inputData.candidates[0]?.content?.parts[0]?.text) ||\n              JSON.stringify(inputData);\n\n// Очищаем от ```json\nif (typeof rawText === 'string') {\n  rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();\n}\n\nlet parsedData = {};\ntry {\n  parsedData = typeof rawText === 'string' ? JSON.parse(rawText) : rawText;\n} catch (e) {\n  parsedData = { error: \"Не удалось распарсить JSON\", raw: rawText };\n}\n\n// Достаем ссылку на фото из узла Google Drive или Telegram\nlet photoUrl = \"\";\ntry {\n  photoUrl = $('Google Drive').first().json.webViewLink || \"\";\n} catch (e) {\n  // Если Google Drive отключен, берем ID из Telegram\n  try {\n    const fileId = $('Telegram Trigger').first().json.message.photo.slice(-1)[0].file_id;\n    photoUrl = `https://api.telegram.org/file/bot${fileId}`; \n  } catch (err) {\n    photoUrl = \"\";\n  }\n}\n\nparsedData.photo_link = photoUrl;\n\nreturn [{ json: parsedData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        160
+      ],
+      "id": "faa1f3f1-e511-4dd1-b842-27340845f168",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "errorMessage": "Дублікат ТТН — зупинено"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "191c05f2-27f2-410f-a14d-7b9bb660b013",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo.pop().file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1744,
+        64
+      ],
+      "id": "5339a4b0-6f34-432c-8c4f-2b4249f72111",
+      "name": "Get File",
+      "webhookId": "283f30c6-a9d0-4654-99db-34f666e36cce",
+      "credentials": {
+        "telegramApi": {
+          "id": "cqggCDaDIpeJqXGd",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Беремо бінарне зображення з вузла Get File\nconst binaryData = $('Get File').first().binary.data;\n\n// Повертаємо текст від Gemini ТА відновлюємо бінарне поле data для Google Drive\nreturn items.map(item => {\n  return {\n    json: item.json,\n    binary: {\n      data: binaryData\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        144
+      ],
+      "id": "8f4272c1-21ad-4273-aeac-10bdd93c341c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Пробуем достать ответ Gemini напрямую из вызова или из контекста\nlet rawText = \"\";\n\ntry {\n  // Вариант 1: Из входящего потока\n  rawText = $input.first().json.candidates[0].content.parts[0].text;\n} catch (e) {\n  // Вариант 2: Запасной — прямо из ноды Gemini по имени\n  rawText = $('Analyze an image').first().json.candidates[0].content.parts[0].text;\n}\n\n// Очищаем и парсим JSON-текст\nconst cleanJsonText = rawText.replace(/```json|```/g, '').trim();\nconst parsedData = JSON.parse(cleanJsonText);\n\n// --- БЛОК ПОДМЕНЫ МАРШРУТА ПО НОМЕРАМ МАШИН ---\n// Список спецмашин (на кириллице и латинице)\nconst specialTrucks = ['АІ5714ТВ', 'АІ5713ТВ', 'АА9347ТР', 'AI5714TB', 'AI5713TB', 'AA9347TP']; \n\n// Проверяем номер машины из ТТН\nconst currentTruck = (parsedData.truck || '').replace(/\\s+/g, '').toUpperCase();\nconst isSpecial = specialTrucks.some(num => currentTruck.includes(num));\n\nif (isSpecial) {\n  const truckInfo = parsedData.truck || '';\n  const trailerInfo = parsedData.trailer ? `(причіп ${parsedData.trailer})` : '';\n  \n  // Достаем маршрут (города), который сгенерировал Gemini, отсекая начальный шаблон ПММ\n  // Извлечет всё, что идет после номера прицепа или тягача (например, \"м. Житомир - м. Київ\")\n  let citiesRoute = '';\n  if (parsedData.route) {\n    const routeParts = parsedData.route.split(/\\)\\s*|\\b[A-Z0-9]{2,8}\\b/i);\n    citiesRoute = routeParts[routeParts.length - 1]?.trim() || '';\n  }\n\n  // Собираем итоговую строку для тралов с замененой на а/м и сохранением маршрута\n  parsedData.route = `Послуги з перевезення а/м автомобіль ${truckInfo} ${trailerInfo} ${citiesRoute}`.replace(/\\s+/g, ' ').trim();\n}\n// ---------------------------------------------\n\n// Добавляем ссылку на файл из Google Drive (если она есть)\ntry {\n  if ($('Google Drive').first()?.json?.webViewLink) {\n    parsedData['webViewLink'] = $('Google Drive').first().json.webViewLink;\n  }\n} catch (e) {}\n\nreturn [{ json: parsedData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        16
+      ],
+      "id": "17c60584-e44c-4537-a765-32b1a51a442e",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "width": 1600,
+        "height": 1600,
+        "resizeOption": "onlyIfLarger",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        64
+      ],
+      "id": "4bab4e60-d808-494f-8510-e1246a4729bb",
+      "name": "Edit Image"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File": {
+      "main": [
+        [
+          {
+            "node": "Edit Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "04d246e6-32c6-4d28-8c35-529c191335e5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d15528fc06984d66288e058b6fdffdc3eff896af08ad4746ec5e929697f55bfd"
+  },
+  "nodeGroups": [],
+  "id": "xZOgo2SHhY2rs6Rw",
+  "tags": []
+}
