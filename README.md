@@ -9,6 +9,8 @@ Logistics and consignment documents (Waybills/TTN) often come in unstructured vi
 
 This project automates the entire processing lifecycle: receiving documents, running multimodal layout extraction, validating logistics parameters, and storing structured outputs.
 
+![n8n Workflow Schema](workflow-schema.png)
+
 ## 🚀 Key Features
 - **Telegram Interface:** Drivers or dispatchers submit photos or PDF scans of Waybills directly in Telegram.
 - **Multimodal AI Extraction:** Leverages Google Gemini 1.5 to dynamically parse unstructured photo/PDF table layouts.
